@@ -1,52 +1,47 @@
 package com.ecommerce.application.project.service;
 
 import com.ecommerce.application.project.model.Category;
+import com.ecommerce.application.project.repositories.CategoryRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
 
-    private final List<Category> categories = new ArrayList<>();
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @Override
     public List<Category> getAllCategories() {
-        return categories;
+        return categoryRepository.findAll();
     }
 
     @Override
     public void createCategory(Category category) {
-        categories.add(category);
+        categoryRepository.save(category);
     }
 
     @Override
     public String deleteCategory(Long categoryId) {
-        Category categoryToBeRemoved = categories.stream()
-                .filter(category -> category.getCategoryId().equals(categoryId))
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException
-                        (HttpStatus.NOT_FOUND, "Category with categoryId " + categoryId + " not found"));
+        Category categoryToBeRemoved = categoryRepository.findById(categoryId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                "Category with categoryID " + categoryId + " not found"));
 
-        categories.remove(categoryToBeRemoved);
+        categoryRepository.delete(categoryToBeRemoved);
         return "Category with categoryID " + categoryId + " removed successfully.";
     }
 
     @Override
     public void updateCategory(Category category) {
-        Category categoryToBeUpdated = categories.stream()
-                .filter(category1 -> category1.getCategoryName().equals(category.getCategoryName()) ||
-                        Objects.equals(category1.getCategoryId(), category.getCategoryId()))
-                .findFirst()
+        Category categoryInDatabase = categoryRepository.findById(category.getCategoryId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Category with categoryId " + category.getCategoryId() + " or name " + category.getCategoryName() + " not found"));
+                        "Category with category name " + category.getCategoryName() + " not found"));
 
-        categories.remove(categoryToBeUpdated);
-        categories.add(category);
-
+        categoryInDatabase.setCategoryName(category.getCategoryName());
+        categoryRepository.save(categoryInDatabase);
     }
 }
